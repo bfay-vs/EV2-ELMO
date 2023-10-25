@@ -1,0 +1,160 @@
+﻿##START // START label
+//global vars
+int bitSet
+int result
+//​
+//constants
+#define SP_MAX 2.5
+#define SP_MIN .5
+#define EN_MAX 7772127
+#define EN_MIN 6037000
+#define togIndex 29
+#define lsIndex 30
+//​
+//function calls
+//setOut()//set outputs to a particular value
+toggleLS(50000)//call function to respond to toggle switch and limit switch
+//stringPot(100000, 50)//function to go between stringpot extremes
+//encTest(100000, 50)
+//​
+//function definition
+//
+//this function goes to a position. These position should be a percentage of the max travel- between 0 and 100
+//cute little bang bang positional controller with the stringpot
+function encTest(int Speed, int pos)
+global int bitSet
+float targetVal
+//initialize
+stepInit()
+//determine target value
+targetVal=((EN_MAX-EN_MIN)*pos/100)+EN_MIN
+bitSet=targetVal
+while(1) // Endless loop
+if(PX<(targetVal-1000))
+ST
+JV=Speed
+BG
+ledTog(1)
+elseif(PX > (targetVal+1000))
+ST
+JV=-1*Speed
+BG
+ledTog(0)
+else
+ST
+//break
+end
+wait(10) //delay of 
+end
+return;
+//​
+//function to respond to toggle switch and limit switch
+function toggleLS(int speed)
+global int bitSet
+int temp
+//initialize
+stepInit()
+ledTog(0)//set led red
+isBitSet(IP, togIndex)
+//configure inputs
+IL[14]=21// when input goes high, stop immidiately under control (soft stop)
+IL[13]=7//gen purpose on high
+//start infinite loop
+//MO=0
+while(1)
+isBitSet(IP, togIndex)
+if(bitSet > 0)
+ledTog(1)
+//MO=1
+JV=speed
+BG
+else
+ST
+//MO=0
+end
+wait(10)
+end
+return;
+//​
+//this function goes to a position. These position should be a percentage of the max travel- between 0 and 100
+//cute little bang bang positional controller with the stringpot
+function stringPot(int Speed, int pos)
+global int bitSet
+float targetVal
+//initialize
+stepInit()
+//determine target value
+targetVal=((SP_MAX-SP_MIN)*pos/100)+SP_MIN
+bitSet=targetVal
+targetVal=1.5
+while(1) // Endless loop
+if(AN[1]<(targetVal-.05))
+ST
+JV=Speed
+BG
+elseif(AN[1] > (targetVal+.05))
+ST
+JV=-1*Speed
+BG
+else
+ST
+//break
+end
+wait(10) //delay of 3 sec
+end
+return;
+//​
+//function to initialize in stepper mode
+function stepInit()
+//initialization
+if (UM!=6) // Ensure motor is in stepper mode
+MO=0 // Disable motor
+end
+if (MO==0) // Change the motor to position mode and enable the motor
+UM=6 // Set position mode//changed to stepper mode
+MO=1 // Enable motor
+end
+return;
+//​
+//function to set outputs 1 and 7 high
+function setOut() // NOT ACTUALLY WORKING YET
+global int bitSet
+stepInit()
+MI=0
+OL[1]=1
+OL[7]=1
+OB[1]=1
+OB[7]=1
+OP
+IL[14]=21// when input goes high, stop immidiately under control (soft stop)
+IL[13]=7//gen purpose on high
+return;
+//​
+/*
+#@AUTO_I1
+// Enter your code here
+JV=Speed/10
+BG
+return
+*/
+//​
+function isBitSet(int n_ip, int k)
+global int bitSet
+global int result //make not global later
+result = n_ip&(1<<(k-1))
+//n=n>>16
+if(result>0)
+bitSet=result
+ledTog(1)
+else
+bitSet=0
+end
+return;
+//
+function ledTog(int val)
+if(val==1)
+TW[16]=5// green
+else
+TW[16]=6//red
+end
+return;

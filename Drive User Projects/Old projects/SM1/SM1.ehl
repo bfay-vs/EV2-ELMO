@@ -1,0 +1,175 @@
+﻿##START // START label
+//global variables
+int state
+int direction
+int encoder_full_range
+int 2mm_count
+float slowdown_range_ratio
+int bw_enc_soft_stop 
+int fw_enc_soft_stop 
+int bw_enc_slow_start
+int fw_enc_slow_start
+//constants
+#define POLL_SPEED 10
+#define MOVING 1
+#define STOPPED 2
+#define SPEED 100000
+#define EN_MAX 7772127
+#define EN_MIN 6037000
+#define BW_TOG_INDEX 29
+#define FW_TOG_INDEX 0 //ToDo define later
+#define BW_LS_INDEX 30
+#define FW_LS_INDEX 0 //ToDo define later
+#define FORWARDS 0
+#define BACKWARDS 1
+function main()
+
+//main function
+function main ()
+global int state
+global int direction
+//
+//slowdown zone variables
+global int encoder_full_range = EN_MAX - EN_MIN
+global int 2mm_count = 1000 //ToDo replace this
+global float slowdown_range_ratio= .025
+global int bw_enc_soft_stop = EN_MIN + 2mm_count
+global int fw_enc_soft_stop = EN_MAX - 2mm_count
+global int bw_enc_slow_start = bw_enc_soft_stop + (encoder_full_range*slowdown_range_ratio)
+global int fw_enc_slow_start = fw_enc_soft_stop - (encoder_full_range*slowdown_range_ratio)
+//
+//endless loop
+while(1)
+switch(state)
+case(MOVING)
+//if limit switch hit 
+//get both limit switch inputs
+isBitSet(IP, BW_LS_INDEX)
+int bw_limit_switch_triggered= bitSet
+isBitSet(IP, FW_LS_INDEX)
+int fw_limit_switch_triggered= bitSet
+if(bw_limit_switch_triggered==1||fw_limit_switch_triggered==1)
+//disable motor command (sudden abrupt emergency stop, shouldn't happen in normal operation)
+//add halt funciton
+ST
+//change state to stopped
+state = STOPPED
+break
+end
+//
+
+//--FORWARDS MOTION--
+if(direction == FORWARDS)
+//if toggle switch released 
+isBitSet(IP, FW_TOG_INDEX)
+int fw_tog_pressed = bitSet
+if(fw_tog_pressed == 0)
+//quickstop command initiated (choose option that disables motor)
+//ToDo add quickstop
+state = STOPPED
+end
+//if in slowdown range
+if(PX > fw_enc_slow_start)
+//reduce speed proportional to stop range if moving in direction of end
+//DO NOT CHANGE STATE FROM MOVING
+int speed_scale = 1 - ( (PX - fw_enc_slow_start) / (fw_enc_soft_stop - fw_enc_slow_start)) //ToDo check ths math
+VS = speed*speed_scale
+end
+//
+end
+//--BACKWARDS MOTION--
+else(direction == BACKWARDS)
+//if toggle switch released 
+isBitSet(IP, BW_TOG_INDEX)
+int bw_tog_pressed = bitSet
+if(bw_tog_pressed ==0)
+//quickstop command initiated (choose option that disables motor)
+//ToDo add quickstop
+state = STOPPED 
+end
+//if in slowdown range
+if(PX < bw_enc_slow_start)
+//reduce speed proportional to stop range if moving in direction of end
+//DO NOT CHANGE STATE FROM MOVING
+int speed_scale = 1 - ( (bw_enc_slow_start - PX ) / (bw_enc_slow_start - bw_enc_soft_stop )) //ToDo check ths math
+VS = speed*speed_scale
+end
+//
+end
+
+case(STOPPED)
+
+//get both limit switch inputs
+isBitSet(IP, BW_LS_INDEX)
+int bw_limit_switch_triggered= bitSet
+isBitSet(IP, FW_LS_INDEX)
+int fw_limit_switch_triggered= bitSet
+//
+//if either limit switch is hit, break
+//both limit switches checked to prevent reversed motor wires during assembly from breaking system
+if(bw_limit_switch_triggered==1||fw_limit_switch_triggered==1)
+ST
+break
+end
+//
+//--BACKWARDS INPUT--
+//get backward toggle switch input
+isBitSet(IP, BW_TOG_INDEX)
+int bw_tog_pressed = bitSet
+//if toggle reverse pressed
+if(bw_tog_pressed==1)
+//if backward encoder edge condition met, break
+
+//set JV to negitive speed 
+VS = -SPEED
+//set state to moving
+state = MOVING
+//set direction
+direction = BACKWARDS
+//enable motor
+BG
+//begin motion
+//what should go here, will this occur when it loops again and enters the state machine with a state = MOVING
+end
+//--FORWARDS INPUT--
+//if toggle forwards
+isBitSet(IP, FW_TOG_INDEX)
+int fw_tog_pressed = bitSet
+if(fw_tog_pressed==1)
+//if forward encoder edge condition met, break
+
+//set JV to positive speed 
+VS = SPEED
+//set state to moving
+state = MOVING
+//set direction
+direction = FORWARDS
+//enable motor
+BG
+//begin motion
+//what should go here, will this occur when it loops again and enters the state machine with a state = MOVING
+end//fw tog if statement end
+end// switch block end
+wait(POLL_SPEED)
+end
+return;
+function isBitSet(int n_ip, int k)
+global int bitSet
+global int result //make not global later
+result = n_ip&(1<<(k-1))
+//n=n>>16
+if(result>0)
+bitSet=result
+ledTog(1)
+else
+bitSet=0
+end
+return;
+//
+function ledTog(int val)
+if(val==1)
+TW[16]=5// green
+else
+TW[16]=6//red
+end
+return;

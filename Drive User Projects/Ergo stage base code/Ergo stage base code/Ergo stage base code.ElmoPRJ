@@ -1,0 +1,16 @@
+﻿<DriveProjectModel xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  ProjectID="-8585045749205540432"
+  ProjectName="Ergo stage base code"
+  EntryPoint="main()"
+  Mode="Debug"
+  HexView="false"
+  ActiveProgramPath="Ergo stage base code.ehl"
+  BreakpointsChangeTime="2023-10-11T09:46:04.937739-04:00"
+  ModificationTime="2023-10-11T09:46:04.937739-04:00">
+  <WatchModel>
+    <WacthList />
+  </WatchModel>
+  <PathesToProgram />
+  <Breakpoints />
+  <ProjectPath>C:\Users\bfay\Documents\Elmo Application Studio\Drive User Projects\Ergo stage base code\Ergo stage base code\Ergo stage base code.ElmoPRJ</ProjectPath>
+</DriveProjectModel>

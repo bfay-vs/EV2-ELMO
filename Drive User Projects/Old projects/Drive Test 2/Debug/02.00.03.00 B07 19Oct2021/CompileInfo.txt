@@ -1,0 +1,7 @@
+Compilation Pass, 0xFFEF05EB
+Name                 Max size             Actual Size          Free Size            Unit                
+TextSpace            65536                3853                 61683                Bytes               
+CodeSpace            65536                2415                 63121                Bytes               
+MaxUserFuncs         51                   6                    45                   Number              
+MaxUserVars          100                  14                   86                   Number              
+DataSpace            2048                 9                    2039                 Number              

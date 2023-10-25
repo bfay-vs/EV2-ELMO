@@ -1,0 +1,197 @@
+﻿##START // START label
+//global vars
+int bitSet
+int stateVal
+int togDown
+int togUp
+int lsDown
+int lsUp
+int debug_var
+int speed_scale 
+int end_speed
+//?
+//constantsOLD
+#define SP_MAX 2.5
+#define SP_MIN .5
+//for drive 1
+//#define EN_MAX 415262
+//#define EN_MIN 10000
+//for drive 2
+#define EN_MAX 443018
+#define EN_MIN 100
+//index of where values appear in IP
+#define TOG_DOWN_INDEX 29
+#define TOG_UP_INDEX 31
+#define LS_DOWN_INDEX 28
+#define LS_UP_INDEX 30
+//LED toggle constants
+#define RED 6 //TW param for ethercat led red
+#define GREEN 5 //TW param for ethercat led green
+#define OFF 4 //TW param for ethercat led off
+//State constants
+#define STOPPED 0
+#define MOVING_FORWARD 1
+#define MOVING_BACKWARD 2
+#define SLOWING_FORWARD 3
+#define SLOWING_BACKWARD 4
+//zone definition
+#define STOP_ZONE 30000
+#define SLOW_ZONE 90000
+//speed definitions
+//#define twentyMM_PER_SEC_SPEED = 81967 // units: cnt/sec
+//function calls
+toggleLS(500000)//call function to respond to toggle switch and limit switch
+//?
+//function definition
+//?
+//function to respond to toggle switch and limit switch
+function toggleLS(int speed)
+global int bitSet
+global int stateVal
+global int togDown
+global int togUp
+global int lsDown
+global int lsUp
+int temp
+global int debug_var
+global int speed_scale
+global int end_speed
+//initialize
+stepInit()
+ledTog(OFF)//set led off
+//configure inputs
+IL[14]=9 // Reverse limit switch high
+IL[12]=11 // Forward limit switch high
+IL[13]=7 //gen purpose on high
+IL[15] = 7
+//configure acceleration
+SD = 5000000
+//start infinite loop
+isBitSet(IP)
+stateVal=STOPPED
+debug_var=speed
+speed_scale = 4
+while(1)
+isBitSet(IP)
+debug_var=speed
+end_speed = speed*.1
+//bitSet=stateVal
+switch(stateVal)
+case(MOVING_FORWARD)
+    if(togUp==0)
+        ledTog(RED)
+        ST
+        //MO=0
+        stateVal=STOPPED
+    end
+    if(PX > (EN_MAX - STOP_ZONE))
+        ST
+        //MO=0
+        stateVal=STOPPED
+    end
+    if(PX > (EN_MAX - SLOW_ZONE))
+        //JV=speed/2
+        stateVal = SLOWING_FORWARD
+        BG
+    end
+//end case moving forward
+//
+case(MOVING_BACKWARD)
+    if(togDown==0)
+        ledTog(RED)
+        ST
+        //MO=0
+        stateVal=STOPPED
+    end
+    if(PX < (EN_MIN + STOP_ZONE))
+        ST
+        //MO=0
+        stateVal=STOPPED
+    end
+    if(PX < (EN_MIN + SLOW_ZONE))
+        //JV=-1*speed/2
+        //BG
+        stateVal=SLOWING_BACKWARD
+    end
+//end case moving backwards
+//
+case(SLOWING_FORWARD)
+    ledTog(RED)
+    if(togUp==0)
+        ST
+        //MO=0
+        stateVal=STOPPED
+    elseif(PX >EN_MAX) //don't change state
+        ST
+        //MO=0
+    else
+        JV = ( ( (end_speed - speed) / (EN_MAX - (EN_MAX - SLOW_ZONE)) ) * (PX - (EN_MAX - SLOW_ZONE) ) + speed )*speed_scale
+        BG
+    end
+case(SLOWING_BACKWARD)
+    ledTog(RED)
+    if(togDown==0)
+        ST
+        //MO=0
+        stateVal=STOPPED
+    elseif(PX < (EN_MIN)) //don't change state
+        ST
+        //MO=0
+    else
+        JV = -1 * ( ( (speed-end_speed) / (SLOW_ZONE-EN_MIN) ) * (PX-EN_MIN) +end_speed )*speed_scale
+        BG
+    end
+case(STOPPED)
+    SD
+    if((togDown > 0) && (PX>EN_MIN+STOP_ZONE) )
+        ledTog(GREEN)
+        //UM=6
+        //MO=1
+        JV=-1*speed*speed_scale
+        BG
+        stateVal=MOVING_BACKWARD
+    elseif((togUp > 0)  && (PX<EN_MAX-STOP_ZONE))//ToDo debug this
+        ledTog(GREEN)
+        //UM=6
+        //MO=1
+        JV=speed*speed_scale
+        BG
+        stateVal=MOVING_FORWARD
+    end
+//end Stopped
+end //end switch
+wait(10)
+end//end while
+return;
+//
+//
+function isBitSet(int n_ip)
+global int bitSet
+global int togDown
+global int togUp
+global int lsDown
+global int lsUp
+int result 
+bitSet = (TOG_DOWN_INDEX-1)
+togDown = n_ip&(1<<(TOG_DOWN_INDEX-1))
+togUp = n_ip&(1<<(TOG_UP_INDEX-1))
+lsDown = n_ip&(1<<(LS_DOWN_INDEX-1))
+lsUp = n_ip&(1<<(LS_UP_INDEX-1))
+return;
+//
+function ledTog(int val)
+//sets ethercat LED to designated value
+TW[16]=val
+return;
+//
+//function to initialize in stepper mode
+function stepInit()
+//initialization
+if (UM!=6) // Ensure motor is in stepper mode
+MO=0 // Disable motor
+end
+if (MO==0) // Change the motor to position mode and enable the motor
+UM=6 // Set position mode//changed to stepper mode
+MO=1 // Enable motor
+end
+return;

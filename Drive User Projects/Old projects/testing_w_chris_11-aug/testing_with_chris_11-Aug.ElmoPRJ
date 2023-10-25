@@ -1,0 +1,16 @@
+﻿<DriveProjectModel xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  ProjectID="-8585098280144994140"
+  ProjectName="testing_with_chris_11-Aug"
+  EntryPoint="main()"
+  Mode="Debug"
+  HexView="false"
+  ActiveProgramPath="testing_with_chris_11-Aug.ehl"
+  BreakpointsChangeTime="2023-08-11T14:34:30.9841666-04:00"
+  ModificationTime="2023-08-11T14:34:30.9841666-04:00">
+  <WatchModel>
+    <WacthList />
+  </WatchModel>
+  <PathesToProgram />
+  <Breakpoints />
+  <ProjectPath>C:\Users\bfay\Documents\Elmo Application Studio\Drive User Projects\testing_w_chris_11-aug\testing_with_chris_11-Aug.ElmoPRJ</ProjectPath>
+</DriveProjectModel>

@@ -1,0 +1,450 @@
+﻿#@AUTOEXEC
+// Global Constants
+//constantsOLD
+#define SPEED 2000000
+//for other armrest depth
+//#define EN_MAX 415262
+//#define EN_MIN 10000
+
+#define EN_MAX 1252662
+#define EN_MIN 0
+//zone definition
+#define STOP_ZONE 5000
+#define SLOW_ZONE 90000
+//index of where values appear in IP 
+//all are 1 bit too high, but have 1 subtracted from them
+//ToDo try removing the +1 offset and -1 subtraction in isbitset
+#define TOG_DOWN_INDEX 29
+#define TOG_UP_INDEX 31
+#define LS_DOWN_INDEX 30
+#define LS_UP_INDEX 28
+#define BRAKE_OPEN_INDEX 19
+#define BRAKE_ERROR_INDEX 18
+#define BRAKE_CLOSED_INDEX 17
+//LED toggle constants
+#define RED 6 //TW param for ethercat led red
+#define GREEN 5 //TW param for ethercat led green
+#define OFF 4 //TW param for ethercat led off
+//State constants
+#define STOPPED 0
+#define MOVING_FORWARD 1
+#define MOVING_BACKWARD 2
+#define SLOWING_FORWARD 3
+#define SLOWING_BACKWARD 4
+//Output pins
+#define RAIL_BRAKE_EN 1
+#define MOTOR_BRAKE_EN 2
+#define RAIL_BRAKE_POWER 7
+//input pins
+#define RAIL_BRAKE_CLOSED 1
+#define RAIL_BRAKE_ERROR 2 //ToDo: impliment behavior in response to error
+#define RAIL_BRAKE_OPEN 3
+#define LS_UP_PIN 12
+#define LS_DOWN_PIN 14
+#define TOG_UP_PIN 13
+#define TOG_DOWN_PIN 15
+//brake configurations
+#define RAIL_BRAKE_USED 0
+#define MOTOR_BRAKE_USED 1
+
+//Global Variables
+//State machine and debug
+int stateVal
+int debug_var
+int debug_st
+int bitSet
+
+//input vars
+int togDown
+int togUp
+int lsDown
+int lsUp
+int isOpen
+int isError
+int isClosed
+
+//speed calc vars
+//int speed
+int end_speed
+int new_speed
+int x
+int m
+
+//Zone markers
+int fwd_stop 
+int fwd_slow
+int bwd_stop
+int bwd_slow
+
+//initalization
+ledTog(RED)//set led
+debug_var = 1
+while(SO == 0)
+	MO = 1
+//	wait(50)
+	debug_var = 2
+end
+debug_var = 3
+ledTog(GREEN)
+main()
+
+return
+
+//---------------------------------------------------------------------
+// Main Function (also the default entry point)
+function main()
+
+	global int stateVal
+	global int bitSet
+	global int debug_var
+	global int debug_st
+	
+	global int togDown
+	global int togUp
+	global int lsDown
+	global int lsUp
+	global int isOpen
+	global int isError
+	global int isClosed
+	
+	//global int speed
+	global int end_speed
+	global int new_speed
+	global int x
+	global int m	
+	
+	global int fwd_stop 
+	global int fwd_slow
+	global int bwd_stop
+	global int bwd_slow
+	
+	fwd_stop = EN_MAX - STOP_ZONE
+	fwd_slow = EN_MAX - SLOW_ZONE
+	bwd_stop = EN_MIN + STOP_ZONE
+	bwd_slow = EN_MIN + SLOW_ZONE
+	
+	
+	//initialize
+	debug_var = 4
+	stepInit()
+	debug_var = 5
+	pinInit()
+	debug_var = 6	
+	shutdown()
+	debug_var = 7
+	ledTog(OFF)
+	debug_var = 8
+	
+	//configure motion values
+	//speed = 2000000 // display depth and armrest dpeth 
+	//speed = 500000 // footrest
+	//speed = -400000 // amrest height. Keep this negitive
+	SD = 20000000
+	inBitPol(IP)
+	stateVal=STOPPED
+
+	
+	//infinite loop. ToDo remove reduntant loops (main and this one) by putting code done in 
+	//main outisde of main and eliminating this loop
+	while(1)
+		inBitPol(IP)
+		debug_st = stateVal
+		switch(stateVal)
+		case(MOVING_FORWARD)
+		    if(togUp==0)
+		        ST
+		        shutdown()
+		        stateVal=STOPPED
+		    end
+		    if(-PX > fwd_stop)
+		        ST
+		        shutdown()
+		        stateVal=STOPPED
+		    end
+		    if(-PX > (fwd_slow))
+		        stateVal = SLOWING_FORWARD
+		        BG
+		    end
+		    //end case moving forward
+		    
+		case(MOVING_BACKWARD)
+		    if(togDown==0)
+		        ST
+		        shutdown()
+		        stateVal=STOPPED
+		    end
+		    if(-PX < (bwd_stop))
+		        ST
+		        shutdown()
+		        stateVal=STOPPED
+		    end
+		    if(-PX < (bwd_slow))
+		        stateVal=SLOWING_BACKWARD
+		    end
+		    //end case moving backwards
+		    
+		case(SLOWING_FORWARD)
+		    if(togUp==0)
+			ST
+			shutdown()
+			stateVal=STOPPED
+		    elseif(-PX >EN_MAX) //don't change state
+		        ST
+		    else
+		        upD8Spd()
+		        BG
+		    end
+		    
+		case(SLOWING_BACKWARD)
+		    if(togDown==0)
+			ST
+			shutdown()
+			stateVal=STOPPED
+		    elseif(-PX < (EN_MIN)) //don't change state
+		        ST
+		    else
+		        upD8Spd()
+		        BG
+		    end
+		case(STOPPED)
+		ledTog(OFF)
+		    if((togDown > 0) && (-PX > bwd_stop))
+		    	debug_var = 9
+		       	startup()
+		       	JV=-1*SPEED
+		       	BG
+		       	stateVal=MOVING_BACKWARD
+		    	ledTog(OFF)		        	
+		    elseif((togUp > 0)  && (-PX < fwd_stop))//ToDo debug this
+		    	debug_var = 9
+		        startup()
+		        JV=SPEED
+		        BG
+		        stateVal=MOVING_FORWARD
+		    end
+		    //end Stopped
+		end //end switch
+		wait(10)
+	end//end while
+return//return to end main()
+
+//---------------------------------------------------------------------
+// User Functions
+
+//Updates speed based on position within slow zones
+//checks stateVal to see which directoin motion is in
+function upD8Spd()
+	//global int speed
+	global int stateVal
+	global int togDown
+	global int togUp
+	global int lsDown
+	global int lsUp
+	global int debug_var
+	global int end_speed
+	
+	//Store PX value so it doesnt change on us mid function
+	int pos
+	//Slow and stop zone values
+	int fwd_stop 
+	int fwd_slow
+	int bwd_stop
+	int bwd_slow
+	//Caluclation variables
+	global int new_speed
+	global int x
+	global int m
+	
+	pos = -PX
+	fwd_stop = EN_MAX - STOP_ZONE
+	fwd_slow = EN_MAX - SLOW_ZONE
+	bwd_stop = EN_MIN + STOP_ZONE
+	bwd_slow = EN_MIN + SLOW_ZONE
+	end_speed = SPEED*.1
+	
+	switch(stateVal)
+		case(SLOWING_BACKWARD)
+			x = pos - bwd_stop
+			m = (SPEED - end_speed) / (bwd_slow - bwd_stop)
+			new_speed = m * x + end_speed 
+			JV = -new_speed
+
+		case(SLOWING_FORWARD)
+			x = pos - fwd_slow
+			m = (end_speed - SPEED) / (fwd_stop - fwd_slow)
+			new_speed = m * x + SPEED 
+			JV = new_speed
+	end //switch block end
+return
+
+//Updates status flags for limit switches and toggle switches
+// n_ip: input bits
+function inBitPol(int n_ip)
+	
+	global int bitSet
+	global int togDown
+	global int togUp
+	global int lsDown
+	global int lsUp
+	global int isOpen
+	global int isError
+	global int isClosed
+	
+	togDown = n_ip&(1<<(TOG_DOWN_INDEX-1))
+	togUp = n_ip&(1<<(TOG_UP_INDEX-1))
+	lsDown = n_ip&(1<<(LS_DOWN_INDEX-1))
+	lsUp = n_ip&(1<<(LS_UP_INDEX-1))
+	isOpen = n_ip&(1<<(BRAKE_OPEN_INDEX-1))
+	isError = n_ip&(1<<(BRAKE_ERROR_INDEX-1))
+	isClosed = n_ip&(1<<(BRAKE_CLOSED_INDEX-1))
+return;
+
+function ledTog(int val)
+	//sets ethercat LED to designated value
+	TW[16]=val
+return;
+
+//~~~~~~
+
+//function to initialize in stepper mode
+function stepInit()
+	global int debug_var
+	//initialization
+	debug_var = 41
+	if (UM!=6) // Ensure motor is in stepper mode
+		MO=0 // Disable motor	
+		until (SO==0)
+	end
+	debug_var = 42
+	if (MO==0) // Change the motor to position mode and enable the motor
+		UM=6 // Set position mode//changed to stepper mode
+		debug_var = 43
+		MO=1 // Enable motor
+		debug_var = 44
+		while (SO==0)
+			ledTog(RED)
+			MO = 1
+			debug_var = 45
+		end
+		ledTog(OFF)
+	end
+	debug_var = 46
+return;
+
+// funciton to smoothly shut down stepper
+// shut down the motor to stop them from "singing" while stationary.
+// (if you don't do this you will know what I mean).
+function shutdown()
+	global int isOpen
+	global int isClosed
+	global int debug_var
+	
+	int brake_i
+	
+	debug_var = 61
+  	JV = 0 // stop motor before brakeing
+	if(RAIL_BRAKE_USED)// Rail brake case
+	  	debug_var = 62
+	  	OB[RAIL_BRAKE_EN] = 1
+	  	OB[RAIL_BRAKE_EN] = 0 // 0V (Closed) Brakeing before disabling motor to prevent backsliding
+	 	while(isClosed == 0)// Poll brake status until brake is closed
+			inBitPol(IP)
+			debug_var = 63
+			
+			/* 
+this block of code fixes the error case where the brake is stuck open, when being given 0V
+to fix this the brake needs to be given the open command (24V) 
+before it will respond to the closed command.
+This error occurs when the brake is open when the system is shut down.
+			*/
+			
+			brake_i = brake_i + 1
+			wait(1)// wait 1ms to ensure at least .5s between reset
+			if(brake_i % 1000 > 500)
+				OB[RAIL_BRAKE_EN] = 1// send open command to reset
+			else
+				OB[RAIL_BRAKE_EN] = 0
+			end
+		end
+		debug_var = 64
+	end
+	
+	if(MOTOR_BRAKE_USED)// Motor brake case
+		debug_var = 65
+		while(OB[MOTOR_BRAKE_EN] == 1)
+			OB[MOTOR_BRAKE_EN] = 0
+			debug_var = 66
+		end
+		debug_var = 67
+	end
+	debug_var = 68
+ 	MO=0 // motor off command
+ 	until (SO==0) // motor off status
+ 	debug_var = 69 // nice.
+return;
+
+//function to smoothly start up motor
+function startup()
+	global int isOpen
+	global int isClosed
+	global int debug_var
+	debug_var = 91
+	if(MOTOR_BRAKE_USED)//Motor brake case
+		debug_var = 92
+		while(OB[MOTOR_BRAKE_EN] == 0)
+			debug_var = 93
+			OB[MOTOR_BRAKE_EN] = 1 //24V (Open)
+		end
+	end
+	if(RAIL_BRAKE_USED)// Rail brake case
+		debug_var = 94
+		OB[RAIL_BRAKE_EN] = 1 //24V (Open)
+		while(isOpen == 0)// Poll brake status until brake is open
+			debug_var = 95
+			inBitPol(IP)
+		end
+	end
+	debug_var = 96
+	MO = 1 // motor on command
+	until (SO==1) // motor on status
+return;
+
+// function to do all pin configurations
+// also sets brakes to hold
+function pinInit()
+	IL[LS_DOWN_PIN]=8 // Reverse limit switch low
+	IL[LS_UP_PIN]=10 // Forward limit switch low
+	IL[TOG_UP_PIN]=7 // gen purpose on high
+	IL[TOG_DOWN_PIN]=7 // gen purpose on high
+	IL[RAIL_BRAKE_OPEN]=7 // gen purpose on high
+	IL[RAIL_BRAKE_CLOSED]=7 // gen purpose on high
+
+	//brake outputs off by default
+	//OL[RAIL_BRAKE_EN] = 0
+	//OL[RAIL_BRAKE_POWER] = 0
+	//OL[MOTOR_BRAKE_EN] = 0
+	
+	// turn brake power on
+	// rail brake case
+	if(RAIL_BRAKE_USED)
+		OL[RAIL_BRAKE_EN] = 1 // Output 1 gen purpose, high logic level
+		OL[RAIL_BRAKE_POWER] = 1 // Output 7 gen purpose, high logic level
+		
+			
+		while(OB[RAIL_BRAKE_POWER] == 0)
+			OB[RAIL_BRAKE_POWER] = 1 // power pin high to power brake
+		end
+	
+		//engage brake
+		while(OB[RAIL_BRAKE_EN] == 1)
+			OB[RAIL_BRAKE_EN] = 0 // engage pin low to engage brake
+		end
+	elseif(MOTOR_BRAKE_USED)
+		OL[MOTOR_BRAKE_EN] = 1 // Output 1 gen purpose, high logic level
+		while(OB[MOTOR_BRAKE_EN] == 1)
+			OB[MOTOR_BRAKE_EN] = 0 // pin low, brake engaged
+		end
+	end//if statement block end
+	
+return;
+//---------------------------------------------------------------------

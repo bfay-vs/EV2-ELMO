@@ -1,0 +1,16 @@
+﻿<DriveProjectModel xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  ProjectID="-8585087911205130845"
+  ProjectName="recovered code"
+  EntryPoint="START"
+  Mode="Debug"
+  HexView="false"
+  ActiveProgramPath="recovered code.ehl"
+  BreakpointsChangeTime="2023-08-23T14:36:04.9714953-04:00"
+  ModificationTime="2023-08-23T14:36:04.9714953-04:00">
+  <WatchModel>
+    <WacthList />
+  </WatchModel>
+  <PathesToProgram />
+  <Breakpoints />
+  <ProjectPath>C:\Users\bfay\Documents\Elmo Application Studio\Drive User Projects\Drive Test 2\recovered code\recovered code.ElmoPRJ</ProjectPath>
+</DriveProjectModel>

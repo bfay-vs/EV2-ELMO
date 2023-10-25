@@ -1,0 +1,121 @@
+﻿#@AUTOEXEC
+// Global Constants
+//index of where values appear in IP
+#define TOG_DOWN_INDEX 29
+#define TOG_UP_INDEX 31
+#define COLL_UP_PIN 2
+#define COLL_DOWN_PIN 1
+//LED toggle constants
+#define RED 6 //TW param for ethercat led red
+#define GREEN 5 //TW param for ethercat led green
+#define OFF 4 //TW param for ethercat led off
+//State constants
+#define STOPPED 0
+#define MOVING_FORWARD 1
+#define MOVING_BACKWARD 2
+
+int bitSet
+int stateVal
+int togDown
+int togUp
+int debug_var
+
+
+ledTog(RED)//set led
+wait(100)
+
+main()
+
+return
+
+//---------------------------------------------------------------------
+// Main Function (also the default entry point)
+function main()
+	global int bitSet
+	global int stateVal
+	global int togDown
+	global int togUp
+	global int debug_var
+
+	//initialize
+	pinInit()
+	//start infinite loop
+	inBitPol(IP)
+	stateVal=STOPPED
+	while(1)
+		inBitPol(IP)
+		switch(stateVal)
+		case(MOVING_FORWARD)
+		    if(togUp==0)
+				OB[COLL_UP_PIN] = 0
+		        stateVal=STOPPED
+		    end
+
+		    //end case moving forward
+		    
+		case(MOVING_BACKWARD)
+		    if(togDown==0)
+				OB[COLL_DOWN_PIN] = 0
+		        stateVal=STOPPED
+		    end
+
+		    //end case moving backwards
+		    
+		case(STOPPED)
+		    if(togDown > 0)
+				OB[COLL_DOWN_PIN] = 1	
+		    	OB[COLL_UP_PIN] = 0				
+		        stateVal=MOVING_BACKWARD
+		    elseif(togUp > 0)
+   				OB[COLL_DOWN_PIN] = 0		    
+		    	OB[COLL_UP_PIN] = 1
+		        stateVal=MOVING_FORWARD
+		    end
+		    //end Stopped
+		end //end switch
+		wait(10)
+	end//end while
+return//return to end main()
+
+//---------------------------------------------------------------------
+// User Functions
+
+//Updates status flags for limit switches and toggle switches
+// n_ip: input bits
+function inBitPol(int n_ip)
+	
+	global int bitSet
+	global int togDown
+	global int togUp
+	int result 
+	bitSet = (TOG_DOWN_INDEX-1)
+	togDown = n_ip&(1<<(TOG_DOWN_INDEX-1))
+	togUp = n_ip&(1<<(TOG_UP_INDEX-1))
+return;
+
+function ledTog(int val)
+	//sets ethercat LED to designated value
+	TW[16]=val
+return;
+
+//~~~~~~
+
+//function to do all pin configurations
+function pinInit()
+	IL[13]=7 //Rocker Up set to gen purpose on high
+	IL[15] = 7 //Rocker Down set to gen purpose on high
+	OL[1] = 1 //Motor up. Output 1 gen purpose, high logic level
+	OL[COLL_DOWN_PIN] = 1 //Motor down. Output 2 gen purpose, high logic level
+
+
+	while(OB[COLL_DOWN_PIN] == 1)
+		OB[COLL_DOWN_PIN] = 0
+	end
+
+
+	while(OB[COLL_UP_PIN] == 1)
+		OB[COLL_UP_PIN] = 0
+	end
+
+return;
+//---------------------------------------------------------------------

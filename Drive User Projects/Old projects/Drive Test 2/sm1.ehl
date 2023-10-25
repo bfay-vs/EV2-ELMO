@@ -1,0 +1,58 @@
+﻿/*
+#@AUTOEXEC
+// Call your Auto Exec Function Here
+main()
+
+*/
+//---------------------------------------------------------------------
+// Global Variables
+
+//---------------------------------------------------------------------
+// Main Function (also the default entry point)
+function main()
+// Enter your code here
+return
+
+//---------------------------------------------------------------------
+// User Functions
+
+
+
+//---------------------------------------------------------------------
+//AUTO ROUTINES Functions
+/*
+#@AUTO_I1
+// Enter your code here
+return
+*/
+
+/*
+#@AUTO_I2
+// Enter your code here
+return
+*/
+
+/*
+#@AUTO_I3
+// Enter your code here
+return
+*/
+
+/*
+#@AUTO_I4
+// Enter your code here
+return
+*/
+
+/*
+#@AUTO_I5
+// Enter your code here
+return
+*/
+
+/*
+#@AUTO_I6
+// Enter your code here
+return
+*/
+

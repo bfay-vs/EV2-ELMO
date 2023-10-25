@@ -1,0 +1,16 @@
+﻿<DriveProjectModel xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  ProjectID="-8585052628806397326"
+  ProjectName="Display Height"
+  EntryPoint="main()"
+  Mode="Debug"
+  HexView="false"
+  ActiveProgramPath="Display Height.ehl"
+  BreakpointsChangeTime="2023-10-03T10:40:04.8448491-04:00"
+  ModificationTime="2023-10-03T10:40:04.8448491-04:00">
+  <WatchModel>
+    <WacthList />
+  </WatchModel>
+  <PathesToProgram />
+  <Breakpoints />
+  <ProjectPath>C:\Users\bfay\Documents\Elmo Application Studio\Drive User Projects\Display Height\Display Height.ElmoPRJ</ProjectPath>
+</DriveProjectModel>
